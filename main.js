@@ -12,7 +12,10 @@ var frames = 0
 var arrBombas = []
 
 var characters = {
-  temporal:"images/temporal.png"
+  player1_alive:"images/temporal.png",
+  player1_dead:"images/fartFace.png",
+  player2_alive:"images/temporal.png", //cambiar jugador
+  player2_dead:"images/fartFace.png" //cambiar jugador
 }
 
 var images = {
@@ -45,6 +48,26 @@ var powerUps = [{
   image:"images/faster_powerUp.png"
 }]
 
+var objBoxes_onfire = [{
+  name:"nothing",
+  level:0,
+  image:"images/nothing_explosion.png"
+},{
+  name:"glass",
+  level:1,
+  image:"images/glass_explosion.png",
+},
+{
+  name:"sand",
+  level:2,
+  image:"images/sand_explosion.png"
+},
+{
+  name:"stone",
+  level:3,
+  image:"images/stone_explosion.png"
+}]
+
 var objBoxes = [{
   name:"nothing",
   level:0,
@@ -73,19 +96,48 @@ function box(rdm_level, rdm_powerUp, box_position, limits){
   this.image = new Image()
   this.image.src = objBoxes[rdm_level].image
   this.hasBomb = false
-  this.hasPlayer = false
+  this.hasPlayer_1 = false
+  this.hasPlayer_2 = false
 
-  this.explode = () =>{
-    if(this.level > 0){
-      this.level--
-      //console.log(this.powerUp)
-      if(this.powerUp > 0 && this.level === 0){
+  this.explode = (stronger) =>{
+    //console.log("Player 1 presente: "+ this.hasPlayer_1)
+    //console.log("Player 2 presente: "+ this.hasPlayer_2)
+    this.image.src = objBoxes_onfire[this.level].image
+    if(this.hasPlayer_1 === true && this.hasPlayer_2 === true){
+      getCaughtByExplosion(1)
+      getCaughtByExplosion(2)
+    }else if(this.hasPlayer_1 === true && this.hasPlayer_2 === false){
+      getCaughtByExplosion(1)
+    }else if(this.hasPlayer_1 === false && this.hasPlayer_2 === true){
+      getCaughtByExplosion(2)
+    }
+    setTimeout(()=>{
+      if(this.level === 0){
+      this.image.src = objBoxes[this.level].image
+      } else{
+
+        if(this.level < 2){
+          this.level--
+        }
+
+        if(this.level >= 2){
+          if(stronger){
+            this.level -=2
+          } else{
+            this.level--
+          }
+          
+        }
+
+        if(this.powerUp > 0 && this.level === 0){
         this.image.src = powerUps[this.powerUp].image
-      }else{
+        } else{
         this.image.src = objBoxes[this.level].image
-      }
-      this.hasBomb = false
-  } 
+        }
+      }    
+    }, 200)
+
+
 }
 }
 
@@ -127,7 +179,7 @@ function dashboard(){
     rdm_matrix[6][11]= new box(0,0,[6,11],{limBox_up:480,limBox_down:560,limBox_left:880,limBox_right:960})
     rdm_matrix[7][10]= new box(0,0,[7,10],{limBox_up:560,limBox_down:640,limBox_left:800,limBox_right:880})
     rdm_matrix[7][11]= new box(0,0,[7,11],{limBox_up:560,limBox_down:640,limBox_left:880,limBox_right:960})
-  console.log(rdm_matrix)
+  //console.log(rdm_matrix)
   this.boxes = rdm_matrix
   }
 
@@ -153,24 +205,27 @@ function bomb(pos,bombMorePower){
   this.image = new Image()
   if (bombMorePower){
     this.image.src = bombs.stronger
+    this.strongerBomb = true
   } else {
     this.image.src = bombs.normal
+    this.strongerBomb = false
   }
   
   this.boom = () =>{
-    if(boxesToExplode.up != false){
-      boxesToExplode.up.explode()
+    if(boxesToExplode.up != false && boxesToExplode.up.hasBomb != true){
+      boxesToExplode.up.explode(this.strongerBomb)
     }
-    if(boxesToExplode.down != false){
-      boxesToExplode.down.explode()
+    if(boxesToExplode.down != false && boxesToExplode.down.hasBomb != true){
+      boxesToExplode.down.explode(this.strongerBomb)
     }
-    if(boxesToExplode.left != false){
-      boxesToExplode.left.explode()
+    if(boxesToExplode.left != false && boxesToExplode.left.hasBomb != true){
+      boxesToExplode.left.explode(this.strongerBomb)
     }
-    if(boxesToExplode.right != false){
-      boxesToExplode.right.explode()
+    if(boxesToExplode.right != false && boxesToExplode.right.hasBomb != true){
+      boxesToExplode.right.explode(this.strongerBomb)
     }
-    dashb.boxes[pos.y][pos.x].image.src = objBoxes[0].image
+    this.boomBox.hasBomb = false
+    this.boomBox.image.src = objBoxes[0].image
   }
 
   this.draw = () =>{
@@ -181,25 +236,35 @@ function bomb(pos,bombMorePower){
     }
   }
 
-  function marker(){
+  function drawMarker(){
 
   }
 }
 
 function bomberman(playerNum){
-  this.x = 20
-  this.y = 20
+
   this.width = 47
   this.height = 47
   this.playerNum  = playerNum ? playerNum : 1
   this.actualPos = {}
+  //this.pastPosition = {x:0,y:0}
   this.lives = 3
   this.stillAlive = true
   this.bombMorePower = false
   this.bombsAllowed = 1
-  this.velocity = 2.5
+  this.velocity = 3
   this.image = new Image()
-  this.image.src = characters.temporal
+  this.image.src = characters.player1_alive
+
+  if(this.playerNum === 1){
+    this.pastPosition = {x:0,y:0}
+    this.x = 20
+    this.y = 20
+  } else if(this.playerNum === 2){
+    this.pastPosition = {x:11,y:7}
+    this.x = 895
+    this.y = 580
+  }
 
   this.getActualBoxPosition = () =>{
     var x_center = this.x+(this.width/2)
@@ -224,14 +289,6 @@ function bomberman(playerNum){
       }
   }
 
-  this.getCaughtByExplosion = () =>{
-    if(this.lives>0){
-      this.lives--
-    }else{
-      this.stillAlive = false
-    }
-  }
-
   this.draw = () =>{
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height)
   }
@@ -254,7 +311,7 @@ function bomberman(playerNum){
             actualBox.powerUp = 0
             break;
         case 3:
-            if(this.velocity <= 4){
+            if(this.velocity <= 4.5){
               this.velocity+=0.2
             }
             actualBox.image.src = objBoxes[0].image
@@ -265,7 +322,7 @@ function bomberman(playerNum){
 
     if (this.y > actualBox.limitsBox.limBox_up){
       this.y -=3*this.velocity
-    } else if(adjacentsBoxes.up != false && adjacentsBoxes.up.level === 0){
+    } else if(adjacentsBoxes.up != false && adjacentsBoxes.up.level === 0 && adjacentsBoxes.up.hasBomb === false){
       this.y -=3*this.velocity
     }
 
@@ -288,7 +345,7 @@ function bomberman(playerNum){
             actualBox.powerUp = 0
             break;
         case 3:
-            if(this.velocity <= 4){
+            if(this.velocity <= 4.5){
               this.velocity+=0.2
             }
             actualBox.image.src = objBoxes[0].image
@@ -298,7 +355,7 @@ function bomberman(playerNum){
       }
     if(this.y+this.height < actualBox.limitsBox.limBox_down){
       this.y +=3*this.velocity
-    } else if(adjacentsBoxes.down != false && adjacentsBoxes.down.level === 0){
+    } else if(adjacentsBoxes.down != false && adjacentsBoxes.down.level === 0 && adjacentsBoxes.down.hasBomb === false){
       this.y +=3*this.velocity
     }  
   }
@@ -321,7 +378,7 @@ function bomberman(playerNum){
             actualBox.powerUp = 0
             break;
         case 3:
-            if(this.velocity <= 4){
+            if(this.velocity <= 4.5){
             this.velocity+=0.2
             }
             actualBox.image.src = objBoxes[0].image
@@ -331,7 +388,7 @@ function bomberman(playerNum){
       }
     if(this.x > actualBox.limitsBox.limBox_left){
       this.x -=3*this.velocity
-    } else if(adjacentsBoxes.left != false && adjacentsBoxes.left.level === 0){
+    } else if(adjacentsBoxes.left != false && adjacentsBoxes.left.level === 0 && adjacentsBoxes.left.hasBomb === false){
       this.x -=3*this.velocity
     }
   }
@@ -354,7 +411,7 @@ function bomberman(playerNum){
             actualBox.powerUp = 0
             break;
         case 3:
-            if(this.velocity <= 4){
+            if(this.velocity <= 4.5){
               this.velocity+=0.2
             }
             actualBox.image.src = objBoxes[0].image
@@ -364,7 +421,7 @@ function bomberman(playerNum){
       }
     if(this.x+this.width < actualBox.limitsBox.limBox_right){
       this.x +=3*this.velocity
-    } else if(adjacentsBoxes.right != false && adjacentsBoxes.right.level === 0){
+    } else if(adjacentsBoxes.right != false && adjacentsBoxes.right.level === 0 && adjacentsBoxes.right.hasBomb === false){
       this.x +=3*this.velocity
     }
   }
@@ -421,20 +478,63 @@ function findAdjacent(pos){
 }
 
 var dashb = new dashboard()
-var player_1 = new bomberman()
+var player_1 = new bomberman(1)
+var player_2 = new bomberman(2)
+
 dashb.createBoxMatrix()
+
+function getCaughtByExplosion(playerNumber){
+  if (playerNumber === 1){
+    if(player_1.lives>0){
+      player_1.lives--
+    }else{
+      player_1.stillAlive = false
+      player_1.image.src = characters.player1_dead
+    }
+  } else if(playerNumber === 2){
+    if(player_2.lives>0){
+      player_2.lives--
+    }else{
+      player_2.stillAlive = false
+      player_2.image.src = characters.player2_dead
+    }
+  }
+}
+
+function updatePastPosition(){
+  var actualPlayer_1_Pos = player_1.getActualBoxPosition()
+  var boxWithPlayer_1 = dashb.boxes[actualPlayer_1_Pos.y][actualPlayer_1_Pos.x]
+  var actualPlayer_2_Pos = player_2.getActualBoxPosition()
+  var boxWithPlayer_2 = dashb.boxes[actualPlayer_2_Pos.y][actualPlayer_2_Pos.x]
+
+  boxWithPlayer_1.hasPlayer_1 = true
+  boxWithPlayer_2.hasPlayer_2 = true
+  
+  if(player_1.pastPosition.x != actualPlayer_1_Pos.x || player_1.pastPosition.y != actualPlayer_1_Pos.y ){
+    dashb.boxes[player_1.pastPosition.y][player_1.pastPosition.x].hasPlayer_1 = false
+    player_1.pastPosition.x = actualPlayer_1_Pos.x
+    player_1.pastPosition.y = actualPlayer_1_Pos.y
+  }
+  
+  if(player_2.pastPosition.x != actualPlayer_2_Pos.x || player_2.pastPosition.y != actualPlayer_2_Pos.y ){
+    dashb.boxes[player_2.pastPosition.y][player_2.pastPosition.x].hasPlayer_2 = false
+    player_2.pastPosition.x = actualPlayer_2_Pos.x
+    player_2.pastPosition.y = actualPlayer_2_Pos.y
+  }
+
+}
 
 function setBomb(player){
   var bombPosition = player.getActualBoxPosition()
   var bomba_ready = new bomb(bombPosition, player.bombMorePower)
-  if(player.bombsAllowed > 0){
+  if(player.bombsAllowed > 0 && dashb.boxes[bombPosition.y][bombPosition.x].hasBomb === false){
     bomba_ready.draw()
     player.bombsAllowed--
     dashb.boxes[bombPosition.y][bombPosition.x].hasBomb = true
-    setTimeout(function(){ 
+    setTimeout(()=>{ 
       bomba_ready.boom()
       player.bombsAllowed++
-      }, 3000);
+      }, 3500);
   }
 }
 
@@ -445,29 +545,57 @@ function start(){
 }
 
 function update(){
+  updatePastPosition()
   frames++
   ctx.clearRect(0,0,canvas.width, canvas.height)
   dashb.draw()
   dashb.drawBoxMatrix()
   player_1.draw()
+  player_2.draw()
+  
+  //console.log(player_1.stillAlive)
+  //console.log(player_1.getActualBoxPosition())
 }
 
+
+
 addEventListener('keydown',function(e){
-  this.console.log(e.keyCode)
   switch(e.keyCode){
       case 40:
-          player_1.moveDown(player_1.getActualBoxPosition())
+          player_2.moveDown(player_2.getActualBoxPosition())
           return
       case 38:
-          player_1.moveUp(player_1.getActualBoxPosition())
+          player_2.moveUp(player_2.getActualBoxPosition())
           return
       case 37:
-          player_1.moveLeft(player_1.getActualBoxPosition())
+          player_2.moveLeft(player_2.getActualBoxPosition())
           return
       case 39:
-          player_1.moveRight(player_1.getActualBoxPosition())
+          player_2.moveRight(player_2.getActualBoxPosition())
           return
       case 189:
+          setBomb(player_2)
+          return
+      default:
+          return
+  }
+} )
+
+addEventListener('keydown',function(e){
+  switch(e.keyCode){
+      case 83:
+          player_1.moveDown(player_1.getActualBoxPosition())
+          return
+      case 87:
+          player_1.moveUp(player_1.getActualBoxPosition())
+          return
+      case 65:
+          player_1.moveLeft(player_1.getActualBoxPosition())
+          return
+      case 68:
+          player_1.moveRight(player_1.getActualBoxPosition())
+          return
+      case 81:
           setBomb(player_1)
           return
       default:
