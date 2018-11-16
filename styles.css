@@ -1,0 +1,12 @@
+body{
+  margin: 0;
+}
+
+.fondo{
+  width: 1280px;
+  height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background-image:url("images/fondo_bomberman.jpg");
+}
