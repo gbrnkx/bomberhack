@@ -5,6 +5,10 @@ var canvas_p2 = document.getElementById('marcador_player2')
 var ctx_p1 = canvas_p1.getContext('2d')
 var ctx_p2 = canvas_p2.getContext('2d')
 var ctx = canvas.getContext('2d')
+
+var bomberMusic = new Audio("images/music.mp3")
+
+
 var gameWelcome = true
 var hasWinner = false
 var winner = 0
@@ -227,10 +231,12 @@ function dashboard(){
 
   this.drawWinnerP1 = ()=>{
     ctx.drawImage(imgWinnerPlayer1,0,0,960,640)
+    
   }
 
   this.drawWinnerP2 = ()=>{
     ctx.drawImage(imgWinnerPlayer2,0,0,960,640)
+    
   }
 
   this.drawMarker=()=>{
@@ -376,7 +382,7 @@ function bomberman(playerNum){
             break;
         case 3:
             if(this.velocity <= 2){
-              this.velocity+=0.1
+              this.velocity+=0.13
             }
             actualBox.image.src = objBoxes[0].image
             actualBox.powerUp = 0
@@ -410,7 +416,7 @@ function bomberman(playerNum){
             break;
         case 3:
             if(this.velocity <= 2){
-              this.velocity+=0.1
+              this.velocity+=0.13
             }
             actualBox.image.src = objBoxes[0].image
             actualBox.powerUp = 0
@@ -443,7 +449,7 @@ function bomberman(playerNum){
             break;
         case 3:
             if(this.velocity <= 2){
-            this.velocity+=0.1
+            this.velocity+=0.13
             }
             actualBox.image.src = objBoxes[0].image
             actualBox.powerUp = 0
@@ -476,7 +482,7 @@ function bomberman(playerNum){
             break;
         case 3:
             if(this.velocity <= 2){
-              this.velocity+=0.1
+              this.velocity+=0.13
             }
             actualBox.image.src = objBoxes[0].image
             actualBox.powerUp = 0
@@ -608,8 +614,9 @@ function setBomb(player){
 }
 
 function start(){
-
   
+  
+
   //Cada 30 milisegundos se llamará a la función update() 1000/25=40
   //Esto es 40 veces por segundo
 
@@ -672,6 +679,7 @@ function update(){
   }
     
   if(hasWinner === true){
+    bomberMusic.pause()
     if (winner === 1){
       dashb.drawWinnerP1()
     }else if(winner === 2){
@@ -802,9 +810,7 @@ addEventListener('keyup',function(e){
 
 addEventListener('keydown',function(e){
   if (e.keyCode > -100 && gameWelcome === true){
-    gameWelcome = false
-  }
-  if (e.keyCode > -100 && gameWelcome === false){
+    bomberMusic.play()
     gameWelcome = false
   }
 } )
